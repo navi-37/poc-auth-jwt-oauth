@@ -11,19 +11,22 @@ public class OAuthService : IOAuthService
     private readonly IExternalLoginRepository _externalLoginRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly ITokenService _tokenService;
+    private readonly ITenantContext _tenantContext;
 
     public OAuthService(
         IEnumerable<IExternalTokenValidator> validators,
         IUserRepository userRepository,
         IExternalLoginRepository externalLoginRepository,
         IRefreshTokenRepository refreshTokenRepository,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        ITenantContext tenantContext)
     {
         _validators = validators;
         _userRepository = userRepository;
         _externalLoginRepository = externalLoginRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _tokenService = tokenService;
+        _tenantContext = tenantContext;
     }
 
     public async Task<LoginResponse?> LoginAsync(string provider, string token)
@@ -36,7 +39,8 @@ public class OAuthService : IOAuthService
         if (userInfo is null)
             return null;
 
-        var externalLogin = await _externalLoginRepository.GetAsync(provider, userInfo.ProviderUserId);
+        var tenantId = _tenantContext.TenantId;
+        var externalLogin = await _externalLoginRepository.GetAsync(provider, userInfo.ProviderUserId, tenantId);
 
         User user;
         if (externalLogin is not null)
@@ -45,8 +49,8 @@ public class OAuthService : IOAuthService
         }
         else
         {
-            user = await _userRepository.GetByEmailAsync(userInfo.Email)
-                   ?? new User { Id = Guid.NewGuid(), Email = userInfo.Email };
+            user = await _userRepository.GetByEmailAsync(userInfo.Email, tenantId)
+                   ?? new User { Id = Guid.NewGuid(), TenantId = tenantId, Email = userInfo.Email };
 
             if (await _userRepository.GetByIdAsync(user.Id) is null)
                 await _userRepository.AddAsync(user);

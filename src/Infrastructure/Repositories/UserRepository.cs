@@ -14,9 +14,9 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public async Task<User?> GetByEmailAsync(string email, Guid tenantId)
     {
-        return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        return await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId);
     }
 
     public async Task<User?> GetByIdAsync(Guid id)

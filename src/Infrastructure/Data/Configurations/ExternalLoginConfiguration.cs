@@ -20,7 +20,8 @@ public class ExternalLoginConfiguration : IEntityTypeConfiguration<ExternalLogin
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.HasIndex(e => new { e.Provider, e.ProviderUserId })
+        // Un proveedor externo puede vincularse a distintos usuarios en distintos tenants
+        builder.HasIndex(e => new { e.Provider, e.ProviderUserId, e.UserId })
             .IsUnique();
 
         builder.HasOne(e => e.User)

@@ -1,5 +1,6 @@
 using System.Text;
 using Api.Middleware;
+using Api.Services;
 using Application.Interfaces;
 using Application.Services;
 using Application.Validators;
@@ -38,7 +39,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Tenant context (scoped state holder set by TenantResolutionMiddleware)
+builder.Services.AddScoped<TenantContext>();
+builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
+
 // Repositories
+builder.Services.AddScoped<ITenantRepository, TenantRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IExternalLoginRepository, ExternalLoginRepository>();
@@ -48,6 +54,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOAuthService, OAuthService>();
+builder.Services.AddScoped<ITenantService, TenantService>();
 
 // OAuth validators
 builder.Services.AddScoped<IExternalTokenValidator, GoogleTokenValidator>();
@@ -80,7 +87,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

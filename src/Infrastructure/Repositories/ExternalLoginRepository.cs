@@ -14,10 +14,14 @@ public class ExternalLoginRepository : IExternalLoginRepository
         _context = context;
     }
 
-    public async Task<ExternalLogin?> GetAsync(string provider, string providerUserId)
+    public async Task<ExternalLogin?> GetAsync(string provider, string providerUserId, Guid tenantId)
     {
         return await _context.ExternalLogins
-            .FirstOrDefaultAsync(e => e.Provider == provider && e.ProviderUserId == providerUserId);
+            .Include(e => e.User)
+            .FirstOrDefaultAsync(e =>
+                e.Provider == provider &&
+                e.ProviderUserId == providerUserId &&
+                e.User.TenantId == tenantId);
     }
 
     public async Task AddAsync(ExternalLogin externalLogin)
